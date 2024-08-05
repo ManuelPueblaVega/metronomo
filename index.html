@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrónomo Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .metronome {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .beat-indicator {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ddd;
+            margin: 20px auto;
+            transition: background-color 0.1s;
+        }
+        .beat-indicator.active {
+            background-color: #ff4444;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="metronome">
+        <h1>Metrónomo Web</h1>
+        <div class="beat-indicator" id="beatIndicator"></div>
+        <div class="controls">
+            <label for="bpm">BPM:</label>
+            <input type="number" id="bpm" value="60" min="30" max="240">
+            <button id="toggleButton">Iniciar</button>
+        </div>
+    </div>
+
+    <script>
+        const beatIndicator = document.getElementById('beatIndicator');
+        const bpmInput = document.getElementById('bpm');
+        const toggleButton = document.getElementById('toggleButton');
+
+        let isPlaying = false;
+        let interval;
+
+        // Crear un contexto de audio y un oscilador para el sonido del metrónomo
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playClick() {
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            
+            const gainNode = audioContext.createGain();
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.001);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+
+            beatIndicator.classList.add('active');
+            setTimeout(() => beatIndicator.classList.remove('active'), 100);
+        }
+
+        function startMetronome() {
+            const bpm = parseInt(bpmInput.value);
+            const intervalTime = (60 / bpm) * 1000;
+            interval = setInterval(playClick, intervalTime);
+            isPlaying = true;
+            toggleButton.textContent = 'Detener';
+        }
+
+        function stopMetronome() {
+            clearInterval(interval);
+            isPlaying = false;
+            toggleButton.textContent = 'Iniciar';
+        }
+
+        toggleButton.addEventListener('click', () => {
+            if (isPlaying) {
+                stopMetronome();
+            } else {
+                startMetronome();
+            }
+        });
+
+        bpmInput.addEventListener('change', () => {
+            if (isPlaying) {
+                stopMetronome();
+                startMetronome();
+            }
+        });
+    </script>
+</body>
+</html>
